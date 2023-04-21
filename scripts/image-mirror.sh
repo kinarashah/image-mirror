@@ -5,6 +5,7 @@ set -uo pipefail
 if [ ! -z "${DOCKER_USERNAME:-}" ] && [ ! -z "${DOCKER_PASSWORD:-}" ]; then
   echo "Logging in to ${DOCKER_REGISTRY:-docker.io} as ${DOCKER_USERNAME}"
   docker login ${DOCKER_REGISTRY:-docker.io} --username=${DOCKER_USERNAME} --password-stdin <<< ${DOCKER_PASSWORD}
+  skopeo login ${DOCKER_REGISTRY:-docker.io} --username=${DOCKER_USERNAME} --password-stdin <<< ${DOCKER_PASSWORD}
   export DOCKER_TOKEN=$(curl -s -d @- -X POST -H "Content-Type: application/json" https://hub.docker.com/v2/users/login/ <<< '{"username": "'${DOCKER_USERNAME}'", "password": "'${DOCKER_PASSWORD}'"}' | jq -r '.token')
 fi
 
@@ -38,7 +39,7 @@ function copy_if_changed {
   else
     echo -e "\tCopying ${SOURCE_REF} => ${DEST_REF}"
     echo -e "\t        ${SOURCE_DIGEST} => ${DEST_DIGEST}"
-    skopeo copy --override-arch=${ARCH} docker://${SOURCE_REF} docker://${DEST_REF} ${EXTRA_ARGS}
+    skopeo copy --preserve-digests --override-arch=${ARCH} docker://${SOURCE_REF} docker://${DEST_REF} ${EXTRA_ARGS}
   fi
 }
 
